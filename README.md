@@ -1,6 +1,6 @@
 # Markdown contents generator
 
-![](./example.jpeg)
+![](./example.jpg)
 
 ## Install
 
@@ -13,7 +13,7 @@ $ npm install -g mcg
 ```sh
 $ mcg ./test.md -d ./test-d.md
 
-# or will be overwrite
+# or be overwritten
 $ mcg ./test.md
 ```
 
