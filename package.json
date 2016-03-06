@@ -1,6 +1,6 @@
 {
   "name": "mcg",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "description": "Markdown contents generator",
   "main": "index.js",
   "scripts": {
