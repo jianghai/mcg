@@ -1,11 +1,11 @@
 #!/usr/bin/env node
 
 var option = process.argv.slice(2)
-var Generator = require('../index')
+var generate = require('../index')
 
-var distination
+var dist
 if (option[1] && option[1] === '-d') {
-  distination = option[2]
+  dist = option[2]
 }
 
-new Generator(option[0], distination)
+generate(option[0], dist)
