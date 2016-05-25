@@ -8,60 +8,68 @@
 
 var fs = require('fs')
 
-function generate(file, dist) {
+var getCataloguesStr = function(catalogues) {
+  var result = ''
+  function catalogueRender(list, indent) {
+    list.forEach(function(item) {
+      var title = item.orders.join('.') + ' ' + item.title
+      var href = item.orders.join('') + '-' + item.title
+      href = href.toLowerCase()
+      href = href.replace(/\s/g, '-')
+      result += Array(indent + 1).join(' ') + '* [' + title + '](#' + href + ')\r\n'
+      item.children && catalogueRender(item.children, indent + 2)
+    }, this)
+  }
+  catalogueRender(catalogues, 0)
+  return result
+}
 
-  function getCataloguesStr(catalogues) {
-    var result = ''
-    function catalogueRender(list, indent) {
-      list.forEach(function(item) {
-        var title = item.orders.join('.') + ' ' + item.title
-        var href = item.orders.join('') + '-' + item.title
-        href = href.toLowerCase()
-        href = href.replace(/\s/g, '-')
-        result += Array(indent + 1).join(' ') + '* [' + title + '](#' + href + ')\r\n'
-        item.children && catalogueRender(item.children, indent + 2)
-      }, this)
+var getOrderedFileContentAndCatalogues = function(fileContent) {
+  var orders = []
+  var catalogues = []
+  var replacer = function(match, level, title) {
+    var start = level.length - 2
+    if (orders.length !== start + 1) {
+      orders.length = start + 1
+      orders[start] || (orders[start] = 0)
     }
-    catalogueRender(catalogues, 0)
-    return result
-  }
+    orders[start]++
 
-  function getOrderedFileContentAndCatalogues(fileContent) {
-    var orders = []
-    var catalogues = []
-    var replacer = function(match, level, title) {
-      var start = level.length - 2
-      if (orders.length !== start + 1) {
-        orders.length = start + 1
-        orders[start] || (orders[start] = 0)
-      }
-      orders[start]++
-
-      var temp = catalogues
-      var i = 0
-      while (orders[++i]) {
-        temp = temp[orders[i - 1] - 1]
-        temp.children || (temp.children = [])
-        temp = temp.children
-      }
-
-      temp.push({
-        orders: orders.concat(),
-        title: title
-      })
-      return level + ' ' + orders.join('.') + ' ' + title
+    var temp = catalogues
+    var i = 0
+    while (orders[++i]) {
+      temp = temp[orders[i - 1] - 1]
+      temp.children || (temp.children = [])
+      temp = temp.children
     }
-    return [fileContent.replace(/(#{2,})\s*[\d\.\s]*(.*)/g, replacer), catalogues]
-  }
 
-  function getFileContentWithCatalogues(fileContent, cataloguesStr) {
-    return fileContent.replace(/\n[\s\S]*?##/, '\n\n' + cataloguesStr + '\n##')
+    temp.push({
+      orders: orders.concat(),
+      title: title
+    })
+    return level + ' ' + orders.join('.') + ' ' + title
   }
+  return [fileContent.replace(/(#{2,})\s*[\d\.\s]*(.*)/g, replacer), catalogues]
+}
 
-  var fileContent = fs.readFileSync(file, 'utf-8')
-  var res = getOrderedFileContentAndCatalogues(fileContent)
-  fileContent = getFileContentWithCatalogues(res[0], getCataloguesStr(res[1]))
-  fs.writeFileSync(dist || file, fileContent)
+var getFileContentWithCatalogues = function(fileContent, cataloguesStr) {
+  return fileContent.replace(/\n[\s\S]*?##/, '\n\n' + cataloguesStr + '\n##')
+}
+
+var readFile = function(fs, file) {
+  return fs.readFileSync(file, 'utf-8')
+}
+
+var writeFile = function(fs, file, fileContent) {
+  fs.writeFileSync(file, fileContent)
+}
+
+/**
+ * Entry
+ */
+var generate = function(file, dist) {
+  var res = getOrderedFileContentAndCatalogues(readFile(fs, file))
+  writeFile(fs, dist || file, getFileContentWithCatalogues(res[0], getCataloguesStr(res[1])))
 }
 
 module.exports = generate
