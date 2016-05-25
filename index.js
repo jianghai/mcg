@@ -10,6 +10,7 @@ var fs = require('fs')
 
 var getCataloguesStr = function(catalogues) {
   var result = ''
+
   function catalogueRender(list, indent) {
     list.forEach(function(item) {
       var title = item.orders.join('.') + ' ' + item.title
@@ -52,24 +53,37 @@ var getOrderedFileContentAndCatalogues = function(fileContent) {
   return [fileContent.replace(/(#{2,})\s*[\d\.\s]*(.*)/g, replacer), catalogues]
 }
 
-var getFileContentWithCatalogues = function(fileContent, cataloguesStr) {
-  return fileContent.replace(/\n[\s\S]*?##/, '\n\n' + cataloguesStr + '\n##')
+var getFileContentWithCatalogues = function(getCataloguesStr, res) {
+  return res[0].replace(/\n[\s\S]*?##/, '\n\n' + getCataloguesStr(res[1]) + '\n##')
 }
 
 var readFile = function(fs, file) {
-  return fs.readFileSync(file, 'utf-8')
+  return new Promise(function(resolve, reject) {
+    fs.readFile(file, 'utf8', function(err, data) {
+      if (err) reject(err)
+      resolve(data)
+    })
+  })
 }
 
-var writeFile = function(fs, file, fileContent) {
-  fs.writeFileSync(file, fileContent)
+var writeFile = function(fs, dist, fileContent) {
+  return new Promise(function(resolve, reject) {
+    fs.writeFile(dist, fileContent, function(err) {
+      if (err) reject(err)
+      console.log('Build `' + dist + '` successed.')
+    })
+  })
 }
 
 /**
  * Entry
  */
 var generate = function(file, dist) {
-  var res = getOrderedFileContentAndCatalogues(readFile(fs, file))
-  writeFile(fs, dist || file, getFileContentWithCatalogues(res[0], getCataloguesStr(res[1])))
+  readFile(fs, file)
+    .then(getOrderedFileContentAndCatalogues)
+    .then(getFileContentWithCatalogues.bind(null, getCataloguesStr))
+    .then(writeFile.bind(null, fs, dist || file))
+    .catch(function(reason) { console.log(reason) })
 }
 
 module.exports = generate
