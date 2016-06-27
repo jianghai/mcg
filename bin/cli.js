@@ -1,11 +1,19 @@
 #!/usr/bin/env node
 
-var option = process.argv.slice(2)
 var generate = require('../index')
 
-var dist
-if (option[1] && option[1] === '-d') {
-  dist = option[2]
-}
+var args = process.argv.slice(2)
+var options = {}
+var lastArg
 
-generate(option[0], dist)
+args.forEach(function(item) {
+  if (item.indexOf('--') === 0) {
+    item = item.slice(2)
+    options[item] = true
+    lastArg = item
+  } else {
+    options[lastArg] = item
+  }
+})
+
+generate(options)
